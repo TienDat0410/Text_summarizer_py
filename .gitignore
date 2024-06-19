@@ -1,0 +1,36 @@
+# Bỏ qua thư mục .idea
+.idea/
+
+# Bỏ qua các file biên dịch bytecode Python
+__pycache__/
+*.py[cod]
+
+# Bỏ qua các file tạm thời của hệ điều hành
+*.swp
+*.swo
+.DS_Store
+
+# Bỏ qua các thư mục môi trường ảo
+venv/
+ENV/
+env/
+.venv/
+
+# Bỏ qua các file log
+*.log
+
+# Bỏ qua các file cài đặt
+*.env
+*.ini
+*.cfg
+
+# Bỏ qua các file đầu ra của Jupyter Notebook
+*.ipynb_checkpoints
+
+# Bỏ qua các file đầu ra của mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Bỏ qua các file đầu ra của Pyre
+.pyre/
