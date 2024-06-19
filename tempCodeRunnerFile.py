@@ -7,9 +7,13 @@ import nltk
 
 nltk.download('punkt')
 
-def textrank_summarizer(text, num_sentences=3):
+# def textrank_summarizer(text, num_sentences):
+def textrank_summarizer(text, importance_threshold=0.1):
     # Chia văn bản thành các câu
     sentences = sent_tokenize(text)
+    
+    if len(sentences) == 0:
+        return ""
     
     # Tính TF-IDF cho từng câu
     vectorizer = TfidfVectorizer()
@@ -26,6 +30,10 @@ def textrank_summarizer(text, num_sentences=3):
     
     # Sắp xếp các câu theo điểm số PageRank
     ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
+    
+    # Xác định ngưỡng để chọn các câu quan trọng nhất
+    total_sentences = len(ranked_sentences)
+    num_sentences = max(1, int(total_sentences * importance_threshold))
     
     # Chọn các câu có điểm cao nhất
     summary_sentences = [s for score, s in ranked_sentences[:num_sentences]]
@@ -50,17 +58,23 @@ for s in s_tags:
     if docid not in docid_groups:
         docid_groups[docid] = []
     docid_groups[docid].append(s)
-print('****************docid***************')
-print(docid_groups)
+
 # Tóm tắt văn bản cho từng docid và tạo các thẻ <s> mới
 new_s_tags = []
 for docid, sentences in docid_groups.items():
     # Ghép các câu lại thành một văn bản duy nhất
     text = ' '.join([s.get_text() for s in sentences])
-    print('***************text***************')
-    print(text)
-    # Tóm tắt văn bản
-    summary = textrank_summarizer(text)
+    
+    # Tóm tắt văn bản, sử dụng số lượng câu từ giá trị num của câu đầu tiên
+
+    #num_sentences = min(186, len(sentences))
+    # num_sentences = int(sentences[0]['num'])
+    # print('********************num_sentences*********************')
+    # print(num_sentences);
+    # summary = textrank_summarizer(text, num_sentences=num_sentences)
+    summary, num_sentences = textrank_summarizer(text)
+    print('********************num_sentences*********************')
+    print(num_sentences)
     
     # Chia bản tóm tắt thành các câu
     summary_sentences = sent_tokenize(summary)
