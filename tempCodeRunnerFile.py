@@ -8,8 +8,9 @@ import nltk
 nltk.download('punkt')
 
 # def textrank_summarizer(text, num_sentences):
-def textrank_summarizer(text, importance_threshold=0.1):
+# def textrank_summarizer(text, importance_threshold=0.1):
     # Chia văn bản thành các câu
+def textrank_summarizer(text, num_sentences):
     sentences = sent_tokenize(text)
     
     if len(sentences) == 0:
@@ -33,7 +34,7 @@ def textrank_summarizer(text, importance_threshold=0.1):
     
     # Xác định ngưỡng để chọn các câu quan trọng nhất
     total_sentences = len(ranked_sentences)
-    num_sentences = max(1, int(total_sentences * importance_threshold))
+    # num_sentences = max(1, int(total_sentences * importance_threshold))
     
     # Chọn các câu có điểm cao nhất
     summary_sentences = [s for score, s in ranked_sentences[:num_sentences]]
@@ -68,11 +69,11 @@ for docid, sentences in docid_groups.items():
     # Tóm tắt văn bản, sử dụng số lượng câu từ giá trị num của câu đầu tiên
 
     #num_sentences = min(186, len(sentences))
-    # num_sentences = int(sentences[0]['num'])
+    num_sentences = int(sentences[0]['num'])
     # print('********************num_sentences*********************')
     # print(num_sentences);
-    # summary = textrank_summarizer(text, num_sentences=num_sentences)
-    summary, num_sentences = textrank_summarizer(text)
+    summary = textrank_summarizer(text, num_sentences=num_sentences)
+    # summary, num_sentences = textrank_summarizer(text)
     print('********************num_sentences*********************')
     print(num_sentences)
     
