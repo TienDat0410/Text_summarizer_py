@@ -1,10 +1,6 @@
 import re
 import math
-from collections import defaultdict
-from bs4 import BeautifulSoup
-
-import numpy as np
-from numpy.linalg import norm
+from collections import defaultdict, Counter
 
 # Tokenize câu
 def sentence_tokenize(text):
@@ -18,20 +14,14 @@ def word_tokenize(sentence):
 def cosine_similarity(vec1, vec2):
     intersection = set(vec1.keys()) & set(vec2.keys())
     numerator = sum([vec1[x] * vec2[x] for x in intersection])
-
+    
     sum1 = sum([vec1[x] ** 2 for x in vec1.keys()])
     sum2 = sum([vec2[x] ** 2 for x in vec2.keys()])
     denominator = math.sqrt(sum1) * math.sqrt(sum2)
-    # print('keys_vec1:',vec1.keys(), '\n');
-    # print('value_vec1:',[vec1[x]for x in intersection], '\n');
-    # print('keys_vec2:',vec2.keys(), '\n');
-    # print('value_vec2:',[vec2[x] for x in intersection], '\n');
     if not denominator:
-        return 0.01
+        return 0.0
     else:
-        # print('cosine_similarity:',float(numerator) / denominator, '\n');
         return float(numerator) / denominator
-
 
 # Tính TF-IDF cho từng câu
 def compute_tfidf(sentences):
@@ -40,7 +30,7 @@ def compute_tfidf(sentences):
         words = set(word_tokenize(sentence))
         for word in words:
             word_freq[word] += 1
-
+    
     tfidf = []
     for sentence in sentences:
         tfidf_sentence = {}
@@ -51,23 +41,16 @@ def compute_tfidf(sentences):
             idf = math.log(len(sentences) / (word_freq[word]))
             tfidf_sentence[word] = tf * idf
         tfidf.append(tfidf_sentence)
-
+    
     return tfidf
 
 # Tính ma trận độ tương đồng
 def build_similarity_matrix(sentences, tfidf):
     similarity_matrix = [[0 for _ in range(len(sentences))] for _ in range(len(sentences))]
-    print('lenght_sentences:',len(sentences))
     for i in range(len(sentences)):
-        row = []
         for j in range(len(sentences)):
             if i != j:
                 similarity_matrix[i][j] = cosine_similarity(tfidf[i], tfidf[j])
-                row.append(f"{similarity_matrix[i][j]}")
-            else:
-                row.append("0.00")
-            print(", ".join(row))
-    #print('similarity_matrix:',similarity_matrix, '\n');
     return similarity_matrix
 
 # Tính điểm PageRank
@@ -88,65 +71,28 @@ def textrank_summarizer(text, num_sentences):
     sentences = sentence_tokenize(text)
     if len(sentences) == 0:
         return ""
-
+    
     tfidf = compute_tfidf(sentences)
     similarity_matrix = build_similarity_matrix(sentences, tfidf)
     scores = pagerank(similarity_matrix)
-
+    
     ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
     summary_sentences = [s for score, s in ranked_sentences[:num_sentences]]
-
+    
     return ' '.join(summary_sentences)
-#************************************************************************************************************
-# Đọc tệp đầu vào và phân tích cú pháp XML
-# with open('d061j', 'r', encoding='utf-8') as file:
-with open('text_input', 'r', encoding='utf-8') as file:
-    content = file.read()
 
-# Sử dụng BeautifulSoup để lọc dữ liệu từ các thẻ <s>
-soup = BeautifulSoup(content, 'html.parser')
-s_tags = soup.find_all('s')
 
-# Nhóm các câu theo docid
-docid_groups = {}
-for s in s_tags:
-    docid = s['docid']
-    if docid not in docid_groups:
-        docid_groups[docid] = []
-    docid_groups[docid].append(s)
+text = """
+heat peaked in the last two days, with the maximum temperature exceeding 39 degrees on Thursday.
+These temperatures were measured at meteorological offices, with actual outdoor temperatures being two to four degrees higher, and up to 10 degrees on concrete roads and buildings with metal roofs.
+Central Vietnam has experienced a heat wave since June 9 with temperatures of 39-40 degrees in Do Luong District of Nghe An Province and Huong Khe District in Ha Tinh Province.
+"""
 
-# Tóm tắt văn bản cho từng docid và tạo các thẻ <s> mới
-new_s_tags = []
-for docid, sentences in docid_groups.items():
-    # Ghép các câu lại thành một văn bản duy nhất
-    text = ' '.join([s.get_text() for s in sentences])
-
-    # Tóm tắt văn bản, sử dụng số lượng câu từ giá trị num của câu đầu tiên
-    num_sentences = int(sentences[0]['num'])
-    summary = textrank_summarizer(text, num_sentences=num_sentences)
-
-    # Chia bản tóm tắt thành các câu
-    summary_sentences = sentence_tokenize(summary)
-
-    # Tạo các thẻ <s> mới với thuộc tính docid, num và wdcount từ câu ban đầu
-    for summary_sentence in summary_sentences:
-        for s in sentences:
-            if summary_sentence in s.get_text():
-                num = s['num']
-                wdcount = len(word_tokenize(summary_sentence))
-                new_s_tag = soup.new_tag('s', docid=docid, num=num, wdcount=wdcount)
-                new_s_tag.string = summary_sentence
-                new_s_tags.append(new_s_tag)
-                break
-
-# Tạo văn bản mới với các thẻ <s> mới
-new_content = '\n'.join(str(tag) for tag in new_s_tags)
-
-# Lưu văn bản mới vào tệp
-output_file_path = 'd061j_output_new.xml'
+# Sử dụng hàm tóm tắt văn bản để tóm tắt văn bản đầu vào
+summary = textrank_summarizer(text, num_sentences=5)
+output_file_path = 'output_new'
 # output_file_path = 'text_output'
 with open(output_file_path, 'w', encoding='utf-8') as file:
-    file.write(new_content)
-
-# In ra nội dung mới
-print(new_content)
+    file.write(summary)
+print("Tóm tắt văn bản:")
+print(summary)
