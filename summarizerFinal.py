@@ -1,30 +1,58 @@
-import re
-import math
-from collections import defaultdict
-from bs4 import BeautifulSoup
-from collections import defaultdict, Counter
-
 import numpy as np
-from numpy.linalg import norm
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 from nltk.tokenize import sent_tokenize, word_tokenize
+from collections import Counter, defaultdict
+import math
 import nltk
+from bs4 import BeautifulSoup
 
 nltk.download('punkt')
 
-# Tính điểm PageRank
-# def pagerank(similarity_matrix, eps=0.0001, d=0.85):
-#     size = len(similarity_matrix)
-#     rank = [1.0 / size] * size
-#     new_rank = [0] * size
-#     change = 1
-#     while change > eps:
-#         for i in range(size):
-#             new_rank[i] = (1 - d) / size + d * sum(similarity_matrix[j][i] * rank[j] for j in range(size))
-#         change = sum(abs(new_rank[i] - rank[i]) for i in range(size))
-#         rank = new_rank[:]
-#     return rank
+def compute_tf(sentences):
+    tf = []
+    for sentence in sentences:
+        words = word_tokenize(sentence.lower())
+        word_count = Counter(words)
+        total_words = len(words)
+        tf.append({word: count / total_words for word, count in word_count.items()})
+        print('tfidf', tf)
+    return tf
+
+def compute_idf(sentences):
+    idf = defaultdict(lambda: 0)
+    total_sentences = len(sentences)
+    for sentence in sentences:
+        words = set(word_tokenize(sentence.lower()))
+        for word in words:
+            idf[word] += 1
+    for word, count in idf.items():
+        idf[word] = math.log(total_sentences / (1 + count))
+    return idf
+
+def compute_tfidf(tf, idf):
+    tfidf = []
+    for sentence_tf in tf:
+        sentence_tfidf = {word: tf_value * idf[word] for word, tf_value in sentence_tf.items()}
+        tfidf.append(sentence_tfidf)
+    return tfidf
+
+def cosine_similarity(vec1, vec2):
+    common_words = set(vec1.keys()) & set(vec2.keys())
+    dot_product = sum(vec1[word] * vec2[word] for word in common_words)
+    norm1 = math.sqrt(sum(value**2 for value in vec1.values()))
+    norm2 = math.sqrt(sum(value**2 for value in vec2.values()))
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+    return dot_product / (norm1 * norm2)
+
+def build_similarity_matrix(sentences, tfidf):
+    size = len(sentences)
+    similarity_matrix = np.zeros((size, size))
+    for i in range(size):
+        for j in range(size):
+            if i != j:
+                similarity_matrix[i][j] = cosine_similarity(tfidf[i], tfidf[j])
+    return similarity_matrix
+
 def pagerank(similarity_matrix, eps=0.0001, d=0.85):
     size = len(similarity_matrix)
     rank = np.ones(size) / size
@@ -43,36 +71,21 @@ def pagerank(similarity_matrix, eps=0.0001, d=0.85):
         rank = new_rank.copy()
     
     return rank
-# 
-def build_similarity_matrix(sentences, tfidf):
-    similarity_matrix = [[0 for _ in range(len(sentences))] for _ in range(len(sentences))]
-    print('lenght_sentences:',len(sentences))
-    for i in range(len(sentences)):
-        row = []
-        for j in range(len(sentences)):
-            if i != j:
-                similarity_matrix[i][j] = cosine_similarity(tfidf[i], tfidf[j])
-                row.append(f"{similarity_matrix[i][j]}")
-            else:
-                row.append("0.00")
-            # print(", ".join(row))
-    #print('similarity_matrix:',similarity_matrix, '\n');
-    return similarity_matrix
-#
+
 def textrank_summarizer(text, num_sentences):
     sentences = sent_tokenize(text)
     if len(sentences) == 0:
         return ""
 
-    # Tính TF-IDF cho các câu
-    tfidf_vectorizer = TfidfVectorizer()
-    X = tfidf_vectorizer.fit_transform(sentences)
-    print(X)
+    # Tính TF, IDF, và TF-IDF
+    tf = compute_tf(sentences)
+    idf = compute_idf(sentences)
+    tfidf = compute_tfidf(tf, idf)
 
     # Tính độ tương đồng cosine giữa các câu
-    sim_matrix = cosine_similarity(X, X)
-    # print('matrix: \n', sim_matrix)
+    sim_matrix = build_similarity_matrix(sentences, tfidf)
 
+    # Tính điểm PageRank
     scores = pagerank(sim_matrix)
 
     # Xếp hạng các câu theo điểm số
@@ -81,7 +94,6 @@ def textrank_summarizer(text, num_sentences):
 
     return ' '.join(summary_sentences)
 
-#************************************************************************************************************
 # Đọc tệp đầu vào và phân tích cú pháp XML
 with open('d070f', 'r', encoding='utf-8') as file:
     content = file.read()
@@ -133,5 +145,4 @@ with open(output_file_path, 'w', encoding='utf-8') as file:
 
 # In ra nội dung mới
 print('success summarizer')
-
 print(new_content)

@@ -2,17 +2,23 @@ import re
 import math
 from collections import defaultdict
 from bs4 import BeautifulSoup
-
+from collections import defaultdict, Counter
 import numpy as np
 from numpy.linalg import norm
+# 
+from nltk.tokenize import sent_tokenize, word_tokenize
+import nltk
+
+nltk.download('punkt')
+
 
 # Tokenize câu
-def sentence_tokenize(text):
-    return re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', text)
+# def sentence_tokenize(text):
+#     return re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', text)
 
 # Tokenize từ
-def word_tokenize(sentence):
-    return re.findall(r'\w+', sentence.lower())
+# def word_tokenize(sentence):
+#     return re.findall(r'\w+', sentence.lower())
 
 # Tính độ tương đồng cosine
 def cosine_similarity(vec1, vec2):
@@ -51,6 +57,7 @@ def compute_tfidf(sentences):
             idf = math.log(len(sentences) / (word_freq[word]))
             tfidf_sentence[word] = tf * idf
         tfidf.append(tfidf_sentence)
+        print(tfidf)
 
     return tfidf
 
@@ -66,7 +73,7 @@ def build_similarity_matrix(sentences, tfidf):
                 row.append(f"{similarity_matrix[i][j]}")
             else:
                 row.append("0.00")
-            print(", ".join(row))
+            # print(", ".join(row))
     #print('similarity_matrix:',similarity_matrix, '\n');
     return similarity_matrix
 
@@ -85,13 +92,19 @@ def pagerank(similarity_matrix, eps=0.0001, d=0.85):
 
 # Chức năng tóm tắt văn bản
 def textrank_summarizer(text, num_sentences):
-    sentences = sentence_tokenize(text)
+    sentences = sent_tokenize(text)
     if len(sentences) == 0:
         return ""
 
     tfidf = compute_tfidf(sentences)
+    # tfidf = TfidfVectorizer()
+    # X = tfidf.fit_transform(sentences)
+    # Tính độ tương đồng cosine 
+    # sim_matrix = cosine_similarity(X, X)
     similarity_matrix = build_similarity_matrix(sentences, tfidf)
     scores = pagerank(similarity_matrix)
+    # similarity_matrix = build_similarity_matrix(sentences, tfidf)
+    # scores = pagerank(nx_graph)
 
     ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
     summary_sentences = [s for score, s in ranked_sentences[:num_sentences]]
@@ -100,7 +113,7 @@ def textrank_summarizer(text, num_sentences):
 #************************************************************************************************************
 # Đọc tệp đầu vào và phân tích cú pháp XML
 # with open('d061j', 'r', encoding='utf-8') as file:
-with open('text_input', 'r', encoding='utf-8') as file:
+with open('d070f', 'r', encoding='utf-8') as file:
     content = file.read()
 
 # Sử dụng BeautifulSoup để lọc dữ liệu từ các thẻ <s>
@@ -126,7 +139,7 @@ for docid, sentences in docid_groups.items():
     summary = textrank_summarizer(text, num_sentences=num_sentences)
 
     # Chia bản tóm tắt thành các câu
-    summary_sentences = sentence_tokenize(summary)
+    summary_sentences = sent_tokenize(summary)
 
     # Tạo các thẻ <s> mới với thuộc tính docid, num và wdcount từ câu ban đầu
     for summary_sentence in summary_sentences:
@@ -143,10 +156,10 @@ for docid, sentences in docid_groups.items():
 new_content = '\n'.join(str(tag) for tag in new_s_tags)
 
 # Lưu văn bản mới vào tệp
-output_file_path = 'd061j_output_new.xml'
-# output_file_path = 'text_output'
+# output_file_path = 'd061j_output_new.xml'
+output_file_path = 'd070f_text_output'
 with open(output_file_path, 'w', encoding='utf-8') as file:
     file.write(new_content)
 
 # In ra nội dung mới
-print(new_content)
+# print(new_content)
