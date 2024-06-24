@@ -117,7 +117,8 @@ for docid, sentences in docid_groups.items():
     text = ' '.join([s.get_text() for s in sentences])
 
     # 
-    num_sentences = int(sentences[0]['num'])
+    # num_sentences = int(sentences[0]['num'])
+    num_sentences = int((len(sentences) *10) / 100)
     
     summary = textrank_summarizer(text, num_sentences=num_sentences)
 
