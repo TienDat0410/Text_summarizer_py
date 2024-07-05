@@ -14,7 +14,7 @@ def compute_tf(sentences):
         word_count = Counter(words)
         total_words = len(words)
         tf.append({word: count / total_words for word, count in word_count.items()})
-        print('tfidf', tf)
+        # print('tfidf', tf)
     return tf
 
 def compute_idf(sentences):
@@ -31,8 +31,11 @@ def compute_idf(sentences):
 def compute_tfidf(tf, idf):
     tfidf = []
     for sentence_tf in tf:
-        sentence_tfidf = {word: tf_value * idf[word] for word, tf_value in sentence_tf.items()}
+        sentence_tfidf = {
+            word: tf_value * idf[word] for word, tf_value in sentence_tf.items()
+            }
         tfidf.append(sentence_tfidf)
+        # print('tfidf', tfidf)
     return tfidf
 
 def cosine_similarity(vec1, vec2):
@@ -51,6 +54,7 @@ def build_similarity_matrix(sentences, tfidf):
         for j in range(size):
             if i != j:
                 similarity_matrix[i][j] = cosine_similarity(tfidf[i], tfidf[j])
+    print('similarity_matrix:\n', similarity_matrix)
     return similarity_matrix
 
 def pagerank(similarity_matrix, eps=0.0001, d=0.85):
@@ -98,7 +102,7 @@ def textrank_summarizer(text, num_sentences):
 with open('d070f', 'r', encoding='utf-8') as file:
     content = file.read()
 
-# Sử dụng BeautifulSoup để lọc dữ liệu từ các thẻ <s>
+# 
 soup = BeautifulSoup(content, 'html.parser')
 s_tags = soup.find_all('s')
 
@@ -145,5 +149,5 @@ with open(output_file_path, 'w', encoding='utf-8') as file:
     file.write(new_content)
 
 # In ra nội dung mới
-print('success summarizer')
+print('******************************success summarizer************************')
 print(new_content)
