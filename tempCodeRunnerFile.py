@@ -45,7 +45,7 @@ def textrank_summarizer(text, num_sentences):
     return summary
 
 # Đọc tệp đầu vào và phân tích cú pháp XML
-with open('d061j', 'r', encoding='utf-8') as file:
+with open('d070f', 'r', encoding='utf-8') as file:
     content = file.read()
 
 # Sử dụng BeautifulSoup để lọc dữ liệu từ các thẻ <s>
@@ -69,7 +69,7 @@ for docid, sentences in docid_groups.items():
     # Tóm tắt văn bản, sử dụng số lượng câu từ giá trị num của câu đầu tiên
 
     #num_sentences = min(186, len(sentences))
-    num_sentences = int(sentences[0]['num'])
+    num_sentences = int((len(sentences) *10) / 100)
     # print('********************num_sentences*********************')
     # print(num_sentences);
     summary = textrank_summarizer(text, num_sentences=num_sentences)
@@ -95,7 +95,7 @@ for docid, sentences in docid_groups.items():
 new_content = '\n'.join(str(tag) for tag in new_s_tags)
 
 # Lưu văn bản mới vào tệp
-output_file_path = 'd061j_output_new'
+output_file_path = 'text'
 with open(output_file_path, 'w', encoding='utf-8') as file:
     file.write(new_content)
 
