@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from nltk.tokenize import sent_tokenize, word_tokenize
 from collections import Counter, defaultdict
@@ -52,24 +53,6 @@ def build_similarity_matrix(sentences, tfidf):
                 similarity_matrix[i][j] = cosine_similarity(tfidf[i], tfidf[j])
     return similarity_matrix
 
-# def pagerank(similarity_matrix, eps=0.0001, d=0.85):
-#     size = len(similarity_matrix)
-#     rank = np.ones(size) / size
-#     change = 1
-
-#     while change > eps:
-#         new_rank = np.zeros(size)
-#         for u in range(size): 
-#             sum_rank = 0
-#             for v in range(size):
-#                 if similarity_matrix[v][u] > 0:
-#                     sum_rank += rank[v] / np.sum(similarity_matrix[v])
-#             new_rank[u] = (1 - d) / size + d * sum_rank
-        
-#         change = np.sum(np.abs(new_rank - rank))
-#         rank = new_rank.copy()
-    
-#     return rank
 def pagerank(similarity_matrix, eps=0.0001, d=0.85):
     size = len(similarity_matrix)
     transition_matrix = np.zeros_like(similarity_matrix)
@@ -104,41 +87,50 @@ def textrank_summarizer(text, num_sentences):
 
     return ' '.join(summary_sentences)
 
-# start
-with open('d070f', 'r', encoding='utf-8') as file:
-    content = file.read()
+input_directory = 'train'
+output_directory = 'results'
 
-soup = BeautifulSoup(content, 'html.parser')
-s_tags = soup.find_all('s')
+if not os.path.isdir(input_directory):
+    print(f"Input directory '{input_directory}' does not exist.")
+    exit()
+if not os.path.isdir(output_directory):
+    os.makedirs(output_directory)
 
-#
-docid_groups = defaultdict(list)
-for s in s_tags:
-    docid = s['docid']
-    docid_groups[docid].append(s)
+for filename in os.listdir(input_directory):
+        input_file_path = os.path.join(input_directory, filename)
+        output_file_path = os.path.join(output_directory, f'{os.path.splitext(filename)[0]}_output')
 
-# 
-new_s_tags = []
-for docid, sentences in docid_groups.items():
-    text = ' '.join([s.get_text() for s in sentences])
-    num_sentences = max(1, int(len(sentences) * 0.1))  
-    summary = textrank_summarizer(text, num_sentences=num_sentences)
-    summary_sentences = sent_tokenize(summary)
+        with open(input_file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
 
-    for summary_sentence in summary_sentences:
-        for s in sentences:
-            if summary_sentence in s.get_text():
-                num = s['num']
-                wdcount = len(word_tokenize(summary_sentence))
-                new_s_tag = soup.new_tag('s', docid=docid, num=num, wdcount=wdcount)
-                new_s_tag.string = summary_sentence
-                new_s_tags.append(new_s_tag)
-                break
+        soup = BeautifulSoup(content, 'html.parser')
+        s_tags = soup.find_all('s')
 
-new_content = '\n'.join(str(tag) for tag in new_s_tags)
+        docid_groups = defaultdict(list)
+        for s in s_tags:
+            docid = s['docid']
+            docid_groups[docid].append(s)
 
-output_file_path = 'text_output'
-with open(output_file_path, 'w', encoding='utf-8') as file:
-    file.write(new_content)
+        new_s_tags = []
+        for docid, sentences in docid_groups.items():
+            text = ' '.join([s.get_text() for s in sentences])
+            num_sentences = max(1, int(len(sentences) * 0.1))  
+            summary = textrank_summarizer(text, num_sentences=num_sentences)
+            summary_sentences = sent_tokenize(summary)
 
-print('******************************success summarizer************************')
+            for summary_sentence in summary_sentences:
+                for s in sentences:
+                    if summary_sentence in s.get_text():
+                        num = s['num']
+                        wdcount = len(word_tokenize(summary_sentence))
+                        new_s_tag = soup.new_tag('s', docid=docid, num=num, wdcount=wdcount)
+                        new_s_tag.string = summary_sentence
+                        new_s_tags.append(new_s_tag)
+                        break
+
+        new_content = '\n'.join(str(tag) for tag in new_s_tags)
+
+        with open(output_file_path, 'w', encoding='utf-8') as file:
+            file.write(new_content)
+
+        print(f'Successfully summarized {filename}')
